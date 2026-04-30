@@ -20,8 +20,8 @@
         , <&pro_micro 15 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
         , <&pro_micro 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
         , <&pro_micro 16 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
-        // Tenstar-style ProMicro nRF52840 boards expose this footprint position as P0.10.
-        , <&gpio0 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
+        // This clone family often maps the D10 footprint position to P1.11.
+        , <&gpio1 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
         , <&pro_micro  1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
         , <&pro_micro  2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
         , <&pro_micro  3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>
