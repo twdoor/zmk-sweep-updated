@@ -26,6 +26,10 @@
 #define KEYS_R 5 6 7 8 9 15 16 17 18 19 25 26 27 28 29
 #define THUMBS 30 31 32 33
 
+// Home row mods macros
+#define HRML(k1,k2,k3,k4) &hml LALT k1  &hml LCTRL k2  &hml LSHFT k3  &hml LGUI k4
+#define HRMR(k1,k2,k3,k4) &hmr LGUI k1  &hmr LSHFT k2  &hmr LCTRL k3  &hmr LALT k4
+
 / {
     behaviors {
         hml: home_row_mod_left {
@@ -64,6 +68,33 @@
             #binding-cells = <0>;
             bindings = <&macro_press &kp LCTRL &kp LSHFT>, <&macro_tap &kp Z>, <&macro_release &kp LSHFT &kp LCTRL>;
         };
+
+        // Romanian diacritics (AltGr + key, for Romanian Programmers layout)
+        ro_a_breve: ro_a_breve {  // Ă
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_press &kp RALT>, <&macro_tap &kp A>, <&macro_release &kp RALT>;
+        };
+        ro_a_circ: ro_a_circ {  // Â
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_press &kp RALT>, <&macro_tap &kp Q>, <&macro_release &kp RALT>;
+        };
+        ro_i_circ: ro_i_circ {  // Î
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_press &kp RALT>, <&macro_tap &kp I>, <&macro_release &kp RALT>;
+        };
+        ro_s_comma: ro_s_comma {  // Ș
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_press &kp RALT>, <&macro_tap &kp S>, <&macro_release &kp RALT>;
+        };
+        ro_t_comma: ro_t_comma {  // Ț
+            compatible = "zmk,behavior-macro";
+            #binding-cells = <0>;
+            bindings = <&macro_press &kp RALT>, <&macro_tap &kp T>, <&macro_release &kp RALT>;
+        };
     };
 
     conditional_layers {
@@ -82,13 +113,13 @@
         //│  Q       │  W       │  E       │  R       │  T       │   │  Y       │  U       │  I       │  O       │  P       │
             &kp Q      &kp W      &kp E      &kp R      &kp T          &kp Y      &kp U      &kp I      &kp O      &kp P
         //├──────────┼──────────┼──────────┼──────────┼──────────┤   ├──────────┼──────────┼──────────┼──────────┼──────────┤
-        //│  A       │  S       │  D       │  F       │  G       │   │  H       │  J       │  K       │  L       │BACKSPACE │
-            &kp A   &hml LCTRL S &hml LGUI D &hml LALT F &kp G        &kp H   &hmr LALT J &hmr LGUI K &hmr LCTRL L &kp BSPC
+        //│  A       │  S/ALT   │  D/CTRL  │  F/SHIFT │  G/GUI   │   │  H/GUI   │  J/SHIFT │  K/CTRL  │  L/ALT   │BACKSPACE │
+            &kp A      HRML(S,        D,         F,         G)         HRMR(H,        J,         K,         L)     &kp BSPC
         //├──────────┼──────────┼──────────┼──────────┼──────────┤   ├──────────┼──────────┼──────────┼──────────┼──────────┤
         //│  Z       │  X       │  C       │  V       │  B       │   │  N       │  M       │ , <      │ . >      │ ENTER    │
             &kp Z      &kp X      &kp C      &kp V      &kp B          &kp N      &kp M      &kp COMMA  &kp DOT    &kp ENTER
         //╰──────────┴──────────┴──────────┼──────────┼──────────┤   ├──────────┼──────────┼──────────┴──────────┴──────────╯
-                                           &lt LEF TAB  &kp LSHIFT    &kp SPACE  &lt RIG TAB
+                                          &lt LEF TAB  &kp SPACE     &kp SPACE  &lt RIG TAB
         //                                 ╰──────────┴──────────╯   ╰──────────┴──────────╯
             >;
         };
@@ -99,11 +130,11 @@
         //│ 1        │  2       │  3       │  4       │  5       │   │ 6        │ 7        │ 8        │ 9        │   0      │
             &kp N1    &kp N2     &kp N3     &kp N4     &kp N5          &kp N6     &kp N7     &kp N8     &kp N9      &kp N0
         //├──────────┼──────────┼──────────┼──────────┼──────────┤   ├──────────┼──────────┼──────────┼──────────┼──────────┤
-        //│          │          │          │          │          |   |          │          │          │          │          │
-            &trans    &trans     &trans      &trans      &trans         &trans   &trans     &trans      &trans      &trans
+        //│  Ă       │  Â       │  Î       │  Ș       │  Ț       |   |HOME/GUI  │PGDN/SHFT │PGUP/CTRL │ END/ALT  │          │
+          &ro_a_breve &ro_a_circ &ro_i_circ &ro_s_comma &ro_t_comma  HRMR(HOME,     PG_DN,     PG_UP,     END)      &trans
         //├──────────┼──────────┼──────────┼──────────┼──────────┤   ├──────────┼──────────┼──────────┼──────────┼──────────┤
-        //│ DELETE   │ CapsLock │ PrintSc  │  INSERT  │ ESCAPE   │   │          │ LEFT     │ DOWN     │ UP       │ RIGHT    │
-            &kp DEL   &kp CAPS   &kp PSCRN  &kp INS    &kp ESC           &trans   &kp LARW   &kp DARW   &kp UARW   &kp RARW
+        //│ DELETE   │ CapsLock │ PrintSc  │  INSERT  │ ESCAPE   │   │ LEFT     │ DOWN     │ UP       │ RIGHT    │          │
+            &kp DEL   &kp CAPS   &kp PSCRN  &kp INS    &kp ESC        &kp LARW   &kp DARW   &kp UARW   &kp RARW    &trans
         //╰──────────┴──────────┴──────────┼──────────┼──────────┤   ├──────────┼──────────┼──────────┴──────────┴──────────╯
                                              &trans     &trans         &trans     &trans
         //                                 ╰──────────┴──────────╯   ╰──────────┴──────────╯
@@ -116,8 +147,8 @@
         //│  !       │  @       │  #       │  $       │  %       │   │  ^       │  &       │  *       │  `       │  ~       │
             &kp EXCL   &kp AT     &kp HASH   &kp DLLR   &kp PRCNT      &kp CARET  &kp AMPS   &kp ASTRK  &kp GRAVE   &kp TILDE
         //├──────────┼──────────┼──────────┼──────────┼──────────┤   ├──────────┼──────────┼──────────┼──────────┼──────────┤
-        //│  "       │  [       │  {       │  (       │          │   │   /      │  -       │  =       │     :    │  ;       │
-            &kp DQT  &kp LBKT   &kp LBRC   &kp LPAR   &trans         &kp FSLH   &kp MINUS  &kp EQUAL  &kp COLON   &kp SEMI
+        //│  "       │  [/ALT   │  {/CTRL  │  (/SHIFT │          │   │   //GUI  │  -/SHIFT │  =/CTRL  │  :/ALT   │  ;       │
+            &kp DQT  &hml LALT LBKT &hml LCTRL LBRC &hml LSHFT LPAR &trans   HRMR(FSLH,     MINUS,     EQUAL,     COLON)   &kp SEMI
         //├──────────┼──────────┼──────────┼──────────┼──────────┤   ├──────────┼──────────┼──────────┼──────────┼──────────┤
         //│  '       │  ]       │  }       │  )       │          │   │    \     │  _       │  +       │  │       │   ?      │
             &kp SQT     &kp RBKT   &kp RBRC   &kp RPAR   &trans         &kp BSLH   &kp UNDER  &kp PLUS   &kp PIPE  &kp QMARK
