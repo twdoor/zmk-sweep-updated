@@ -1,0 +1,6 @@
+#include "cradio_dongle.dtsi"
+
+// Dongle has no physical keys — use a single unconnected pin as placeholder
+&kscan0 {
+    input-gpios = <&pro_micro 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+};
