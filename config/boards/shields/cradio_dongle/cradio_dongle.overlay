@@ -1,6 +1,25 @@
 #include "cradio_dongle.dtsi"
 
-// Dongle has no physical keys — use a single unconnected pin as placeholder
+/ {
+    chosen {
+        zmk,kscan = &mock_kscan;
+        zmk,battery-uart = &cradio_battery_uart;
+    };
+
+    mock_kscan: mock_kscan_0 {
+        compatible = "zmk,kscan-mock";
+        columns = <1>;
+        rows = <0>;
+        events = <>;
+    };
+};
+
+&zephyr_udc0 {
+    cradio_battery_uart: cradio_battery_uart {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};
+
 &kscan0 {
-    input-gpios = <&pro_micro 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+    status = "disabled";
 };

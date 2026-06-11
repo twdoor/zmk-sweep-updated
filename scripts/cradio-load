@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: cradio-load [--dry-run] {left|right|dongle|reset}
+
+Copy a built CRadio UF2 file to a connected nice!nano in bootloader mode.
+Double-tap reset on the nice!nano first so the NICENANO drive appears.
+EOF
+}
+
+dry_run=0
+if [[ ${1:-} == "--dry-run" ]]; then
+    dry_run=1
+    shift
+fi
+
+target=${1:-}
+if [[ -z $target || $# -ne 1 ]]; then
+    usage >&2
+    exit 2
+fi
+
+script_path=$(readlink -f "${BASH_SOURCE[0]}")
+repo_dir=$(cd "$(dirname "$script_path")/.." && pwd)
+
+case "$target" in
+    left)
+        build_name=cradio_dongle_left
+        ;;
+    right)
+        build_name=cradio_dongle_right
+        ;;
+    dongle|central)
+        build_name=cradio_dongle
+        ;;
+    reset|settings_reset)
+        build_name=settings_reset
+        ;;
+    -h|--help|help)
+        usage
+        exit 0
+        ;;
+    *)
+        echo "Unknown target: $target" >&2
+        usage >&2
+        exit 2
+        ;;
+esac
+
+firmware="$repo_dir/.zmk-work/build/$build_name/zephyr/zmk.uf2"
+if [[ ! -f $firmware ]]; then
+    echo "Firmware not found: $firmware" >&2
+    echo "Build the '$build_name' target first." >&2
+    exit 1
+fi
+
+find_nicenano_mounts() {
+    findmnt -rn -t vfat -o TARGET,LABEL 2>/dev/null |
+        awk 'toupper($2) == "NICENANO" { print $1 }'
+}
+
+mapfile -t mount_points < <(find_nicenano_mounts)
+
+if (( ${#mount_points[@]} == 0 )) && command -v udisksctl >/dev/null 2>&1; then
+    mapfile -t devices < <(
+        lsblk -prno NAME,LABEL,FSTYPE,MOUNTPOINT 2>/dev/null |
+            awk 'toupper($2) == "NICENANO" && tolower($3) == "vfat" && NF == 3 { print $1 }'
+    )
+
+    if (( ${#devices[@]} == 1 )); then
+        udisksctl mount -b "${devices[0]}" >/dev/null
+        mapfile -t mount_points < <(find_nicenano_mounts)
+    fi
+fi
+
+if (( ${#mount_points[@]} == 0 )); then
+    echo "No mounted NICENANO bootloader drive found." >&2
+    echo "Double-tap reset on the nice!nano, then try again." >&2
+    exit 1
+fi
+
+if (( ${#mount_points[@]} > 1 )); then
+    echo "Multiple NICENANO drives found; connect only the board you want to flash:" >&2
+    printf '  %s\n' "${mount_points[@]}" >&2
+    exit 1
+fi
+
+mount_point=${mount_points[0]}
+if [[ ! -w $mount_point ]]; then
+    echo "NICENANO drive is not writable: $mount_point" >&2
+    exit 1
+fi
+
+destination="$mount_point/${build_name}.uf2"
+if (( dry_run )); then
+    echo "Would copy: $firmware"
+    echo "To:         $destination"
+    exit 0
+fi
+
+echo "Loading $target firmware onto $mount_point..."
+cp -- "$firmware" "$destination"
+echo "Done. The nice!nano should reboot automatically."

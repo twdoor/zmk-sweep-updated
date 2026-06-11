@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+format=plain
+swap=0
+
+usage() {
+    cat <<'EOF'
+Usage: cradio-battery [--json|--waybar] [--swap]
+
+Read the left and right battery levels from the CRadio USB dongle.
+
+Options:
+  --json     Print {"left":N,"right":N}
+  --waybar   Print Waybar JSON with text, tooltip, and class
+  --swap     Swap the left and right values
+EOF
+}
+
+while (($#)); do
+    case $1 in
+        --json) format=json ;;
+        --waybar) format=waybar ;;
+        --swap) swap=1 ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+    esac
+    shift
+done
+
+command -v jq >/dev/null || { echo "Required command not found: jq" >&2; exit 1; }
+
+shopt -s nullglob
+ports=(/dev/serial/by-id/usb-ZMK_Project_Cradio_*-if*)
+if ((${#ports[@]} == 0)); then
+    echo "CRadio battery USB interface not found." >&2
+    echo "Build and flash the updated dongle firmware, then reconnect it." >&2
+    exit 1
+fi
+
+response=
+for port in "${ports[@]}"; do
+    stty -F "$port" 115200 raw -echo -hupcl
+    exec 3<>"$port"
+    printf 'battery\n' >&3
+
+    for _ in {1..5}; do
+        if IFS= read -r -t 0.1 response <&3; then
+            [[ $response == CRADIO_BATTERY\ * ]] && break 2
+        fi
+    done
+
+    exec 3>&-
+done
+exec 3>&- 2>/dev/null || true
+
+if [[ $response =~ ^CRADIO_BATTERY[[:space:]]L=([0-9]+)[[:space:]]R=([0-9]+)$ ]]; then
+    # ZMK assigned this keyboard's right half to peripheral slot 0 and left to slot 1.
+    right=${BASH_REMATCH[1]}
+    left=${BASH_REMATCH[2]}
+else
+    echo "No valid battery response from the CRadio dongle." >&2
+    exit 1
+fi
+
+if ((swap)); then
+    value=$left
+    left=$right
+    right=$value
+fi
+
+case $format in
+    json)
+        jq -cn --argjson left "$left" --argjson right "$right" '{left:$left,right:$right}'
+        ;;
+    waybar)
+        lowest=$((left < right ? left : right))
+        class=normal
+        ((lowest <= 20)) && class=warning
+        ((lowest <= 10)) && class=critical
+        printf -v tooltip 'Left: %s%%\nRight: %s%%' "$left" "$right"
+        jq -cn --arg text "󰌌" \
+            --arg tooltip "$tooltip" \
+            --arg class "$class" '{text:$text,tooltip:$tooltip,class:$class}'
+        ;;
+    plain)
+        printf 'Left: %s%%\nRight: %s%%\n' "$left" "$right"
+        ;;
+esac
